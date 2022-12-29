@@ -1,0 +1,89 @@
+#pragma version 5
+txn ApplicationID
+int 0
+==
+bnz main_l10
+txn OnCompletion
+int NoOp
+==
+bnz main_l5
+txn OnCompletion
+int OptIn
+==
+txn OnCompletion
+int CloseOut
+==
+||
+txn OnCompletion
+int UpdateApplication
+==
+||
+bnz main_l4
+err
+main_l4:
+int 0
+return
+main_l5:
+txna ApplicationArgs 0
+byte "mint"
+==
+bnz main_l9
+txna ApplicationArgs 0
+byte "withdraw"
+==
+bnz main_l8
+err
+main_l8:
+callsub sub1
+int 1
+return
+main_l9:
+callsub sub0
+int 1
+return
+main_l10:
+byte "asset_name"
+txna ApplicationArgs 0
+app_global_put
+int 1
+return
+sub0: // executeAssetCreationTxn
+itxn_begin
+int acfg
+itxn_field TypeEnum
+byte "asset_name"
+app_global_get
+itxn_field ConfigAssetName
+txna ApplicationArgs 1
+itxn_field ConfigAssetUnitName
+int 1
+itxn_field ConfigAssetTotal
+int 0
+itxn_field ConfigAssetDecimals
+txna ApplicationArgs 2
+itxn_field ConfigAssetURL
+global CurrentApplicationAddress
+itxn_field ConfigAssetManager
+global CurrentApplicationAddress
+itxn_field ConfigAssetReserve
+global CurrentApplicationAddress
+itxn_field ConfigAssetFreeze
+global CurrentApplicationAddress
+itxn_field ConfigAssetClawback
+itxn_submit
+itxn CreatedAssetID
+itob
+log
+retsub
+sub1: // executeAssetTransferTxn
+itxn_begin
+int axfer
+itxn_field TypeEnum
+txna Assets 0
+itxn_field XferAsset
+txna Accounts 1
+itxn_field AssetCloseTo
+int 1
+itxn_field AssetAmount
+itxn_submit
+retsub
