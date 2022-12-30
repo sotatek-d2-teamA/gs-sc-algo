@@ -65,9 +65,24 @@ def approval_program():
                 {
                     TxnField.type_enum: TxnType.AssetTransfer,
                     TxnField.xfer_asset: Txn.assets[0],
-                    # TxnField.asset_receiver: Txn.accounts[1],
-                    TxnField.asset_close_to:Txn.accounts[1],
-                    # TxnField.asset_amount: Int(1),
+                    TxnField.asset_receiver: Txn.accounts[1],
+                    # TxnField.asset_close_to:Txn.accounts[1],
+                    TxnField.asset_amount: Int(1),
+                }
+            ),
+            InnerTxnBuilder.Submit(),
+        ])
+
+    @Subroutine(TealType.none)
+    def executeAssetDestroyTxn() -> TxnExpr:
+        return Seq([
+            InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields(
+                {
+                    TxnField.type_enum: TxnType.AssetConfig,
+                    # TxnField.xfer_asset: Txn.assets[0],
+                    TxnField.config_asset: Txn.assets[0]
+
                 }
             ),
             InnerTxnBuilder.Submit(),
@@ -85,11 +100,16 @@ def approval_program():
         executeAssetTransferTxn(),
         Approve(),
     )
+    on_deposit = Seq(
+        executeAssetDestroyTxn(),
+        Approve(),
+    )
 
     on_call_method = Txn.application_args[0]
     on_call = Cond(
         [on_call_method == Bytes("mint"), on_mint],
         [on_call_method == Bytes("withdraw"), on_withdraw],
+        [on_call_method == Bytes("deposit"), on_deposit],
 
     )
 
@@ -113,12 +133,12 @@ def clear_state_program():
     return Approve()
 
 
-with open("auction_approval.teal", "w") as f:
+with open("teal/nft/auction_approval.teal", "w") as f:
     compiled = compileTeal(
         approval_program(), mode=Mode.Application, version=5)
     f.write(compiled)
 
-with open("auction_clear_state.teal", "w") as f:
+with open("teal/nft/auction_clear_state.teal", "w") as f:
     compiled = compileTeal(clear_state_program(),
                            mode=Mode.Application, version=5)
     f.write(compiled)
