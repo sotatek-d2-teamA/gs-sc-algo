@@ -3,38 +3,8 @@ from pyteal import *
 
 def approval_program():
     # Global
-    asset_name = Bytes("asset_name")
 
-    # @Subroutine(TealType.uint64)
-    # def executeAssetCreationTxn(txn_index: TealType.uint64) -> TxnExpr:
-    #     """
-    #     returns the ID of the generated asset or fails
-    #     """
-    #     call_parameters = Gtxn[txn_index].application_args
-    #     asset_total = Btoi(call_parameters[3])
-    #     decimals = Btoi(call_parameters[4])
-    #     return Seq([
-    #         InnerTxnBuilder.Begin(),
-    #         InnerTxnBuilder.SetFields({
-    #             TxnField.type_enum: TxnType.AssetConfig,
-    #             # TxnField.config_asset_name: call_parameters[1],
-    #             # TxnField.config_asset_unit_name: call_parameters[2],
-    #             # TxnField.config_asset_total: asset_total,
-    #             # TxnField.config_asset_decimals: decimals,
-    #             # TxnField.config_asset_url: call_parameters[5],
-
-    #             # TxnField.config_asset_default_frozen: Int(1),
-    #             # TxnField.config_asset_metadata_hash: call_parameters[0],
-
-    #             TxnField.config_asset_manager: Global.current_application_address(),
-    #             TxnField.config_asset_reserve: Global.current_application_address(),
-    #             TxnField.config_asset_freeze: Global.current_application_address(),
-    #             TxnField.config_asset_clawback: Global.current_application_address(),
-    #         }),
-    #         InnerTxnBuilder.Submit(),
-    #         Log(Itob(InnerTxn.created_asset_id())),
-    #         # InnerTxn.created_asset_id()
-    #     ])
+    server_address = Bytes("server_address")
 
     @Subroutine(TealType.none)
     def executeAssetCreationTxn() -> TxnExpr:
@@ -42,11 +12,12 @@ def approval_program():
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields({
                 TxnField.type_enum: TxnType.AssetConfig,
-                TxnField.config_asset_name: App.globalGet(asset_name),
-                TxnField.config_asset_unit_name: Txn.application_args[1],
+                TxnField.config_asset_name: Txn.application_args[1],
+                TxnField.config_asset_unit_name: Txn.application_args[2],
+                TxnField.config_asset_url: Txn.application_args[3],
+
                 TxnField.config_asset_total: Int(1),
                 TxnField.config_asset_decimals: Int(0),
-                TxnField.config_asset_url: Txn.application_args[2],
 
                 TxnField.config_asset_manager: Global.current_application_address(),
                 TxnField.config_asset_reserve: Global.current_application_address(),
@@ -66,11 +37,11 @@ def approval_program():
                     TxnField.type_enum: TxnType.AssetTransfer,
                     TxnField.xfer_asset: Txn.assets[0],
                     TxnField.asset_receiver: Txn.accounts[1],
-                    # TxnField.asset_close_to:Txn.accounts[1],
                     TxnField.asset_amount: Int(1),
                 }
             ),
             InnerTxnBuilder.Submit(),
+            Log(Itob(Txn.assets[0])),
         ])
 
     @Subroutine(TealType.none)
@@ -80,28 +51,42 @@ def approval_program():
             InnerTxnBuilder.SetFields(
                 {
                     TxnField.type_enum: TxnType.AssetConfig,
-                    # TxnField.xfer_asset: Txn.assets[0],
                     TxnField.config_asset: Txn.assets[0]
-
                 }
             ),
             InnerTxnBuilder.Submit(),
+            Log(Itob(Txn.assets[0])),
         ])
 
     on_create = Seq(
-        App.globalPut(asset_name, Txn.application_args[0]),
+        App.globalPut(server_address, Txn.application_args[0]),
         Approve(),
     )
     on_mint = Seq(
+        Assert(Gtxn[Int(1)].sender() == App.globalGet(server_address)),
+        Log(Txn.application_args[0]),  # mint
         executeAssetCreationTxn(),
+        Log(Txn.accounts[1]),
         Approve(),
     )
     on_withdraw = Seq(
+        Assert(Gtxn[Int(1)].sender() == App.globalGet(server_address)),
+        Log(Txn.application_args[0]),  # withdraw
         executeAssetTransferTxn(),
+        Log(Txn.accounts[1]),
         Approve(),
     )
     on_deposit = Seq(
+        # check if user is send enough
+        Assert(Gtxn[Int(0)].asset_amount() == Int(1)),
+        Assert(Gtxn[Int(0)].xfer_asset() == Txn.assets[0]),
+        Assert(Gtxn[Int(0)].sender() == Txn.sender()),
+        Assert(Gtxn[Int(0)].asset_receiver(
+        ) == Global.current_application_address()),
+
+        Log(Txn.application_args[0]),  # deposit
         executeAssetDestroyTxn(),
+        Log(Txn.accounts[1]),
         Approve(),
     )
 
