@@ -1,0 +1,321 @@
+#pragma version 5
+txn ApplicationID
+int 0
+==
+bnz main_l24
+txn OnCompletion
+int NoOp
+==
+bnz main_l5
+txn OnCompletion
+int OptIn
+==
+txn OnCompletion
+int CloseOut
+==
+||
+txn OnCompletion
+int UpdateApplication
+==
+||
+bnz main_l4
+err
+main_l4:
+int 0
+return
+main_l5:
+txna ApplicationArgs 0
+byte "mint_token"
+==
+bnz main_l23
+txna ApplicationArgs 0
+byte "withdraw_token"
+==
+bnz main_l22
+txna ApplicationArgs 0
+byte "deposit_token"
+==
+bnz main_l21
+txna ApplicationArgs 0
+byte "mint_nft"
+==
+bnz main_l20
+txna ApplicationArgs 0
+byte "withdraw_nft"
+==
+bnz main_l19
+txna ApplicationArgs 0
+byte "deposit_nft"
+==
+bnz main_l18
+txna ApplicationArgs 0
+byte "mint_item"
+==
+bnz main_l17
+txna ApplicationArgs 0
+byte "withdraw_item"
+==
+bnz main_l16
+txna ApplicationArgs 0
+byte "deposit_item"
+==
+bnz main_l15
+err
+main_l15:
+int 0
+gtxns AssetAmount
+txna ApplicationArgs 1
+btoi
+==
+assert
+int 0
+gtxns XferAsset
+txna Assets 0
+==
+assert
+int 0
+gtxns Sender
+txn Sender
+==
+assert
+int 0
+gtxns AssetReceiver
+global CurrentApplicationAddress
+==
+assert
+txna ApplicationArgs 0
+log
+txna Assets 0
+itob
+log
+txna Accounts 1
+log
+txna ApplicationArgs 1
+log
+int 1
+return
+main_l16:
+int 1
+gtxns Sender
+byte "server_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+txna ApplicationArgs 1
+btoi
+callsub sub1
+txna Accounts 1
+log
+txna ApplicationArgs 1
+log
+int 1
+return
+main_l17:
+int 1
+gtxns Sender
+byte "server_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+int 9223372036854775806
+int 0
+callsub sub0
+txna Accounts 1
+log
+int 1
+return
+main_l18:
+int 0
+gtxns AssetAmount
+int 1
+==
+assert
+int 0
+gtxns XferAsset
+txna Assets 0
+==
+assert
+int 0
+gtxns Sender
+txn Sender
+==
+assert
+int 0
+gtxns AssetReceiver
+global CurrentApplicationAddress
+==
+assert
+txna ApplicationArgs 0
+log
+callsub sub2
+txna Accounts 1
+log
+int 1
+return
+main_l19:
+int 1
+gtxns Sender
+byte "server_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+int 1
+callsub sub1
+txna Accounts 1
+log
+int 1
+return
+main_l20:
+int 1
+gtxns Sender
+byte "server_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+int 1
+int 0
+callsub sub0
+txna Accounts 1
+log
+int 1
+return
+main_l21:
+int 0
+gtxns AssetAmount
+txna ApplicationArgs 1
+btoi
+==
+assert
+int 0
+gtxns XferAsset
+txna Assets 0
+==
+assert
+int 0
+gtxns Sender
+txn Sender
+==
+assert
+int 0
+gtxns AssetReceiver
+global CurrentApplicationAddress
+==
+assert
+txna ApplicationArgs 0
+log
+txna Assets 0
+itob
+log
+txna Accounts 1
+log
+txna ApplicationArgs 1
+log
+int 1
+return
+main_l22:
+int 1
+gtxns Sender
+byte "server_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+txna ApplicationArgs 1
+btoi
+callsub sub1
+txna Accounts 1
+log
+txna ApplicationArgs 1
+log
+int 1
+return
+main_l23:
+int 1
+gtxns Sender
+byte "admin_address"
+app_global_get
+==
+assert
+txna ApplicationArgs 0
+log
+int 9223372036854775806
+int 6
+callsub sub0
+txna Accounts 1
+log
+int 1
+return
+main_l24:
+byte "server_address"
+txna ApplicationArgs 0
+app_global_put
+byte "admin_address"
+txna ApplicationArgs 1
+app_global_put
+int 1
+return
+sub0: // executeAssetCreationTxn
+store 1
+store 0
+itxn_begin
+int acfg
+itxn_field TypeEnum
+txna ApplicationArgs 1
+itxn_field ConfigAssetName
+txna ApplicationArgs 2
+itxn_field ConfigAssetUnitName
+txna ApplicationArgs 3
+itxn_field ConfigAssetURL
+load 0
+itxn_field ConfigAssetTotal
+load 1
+itxn_field ConfigAssetDecimals
+global CurrentApplicationAddress
+itxn_field ConfigAssetManager
+global CurrentApplicationAddress
+itxn_field ConfigAssetReserve
+global CurrentApplicationAddress
+itxn_field ConfigAssetFreeze
+global CurrentApplicationAddress
+itxn_field ConfigAssetClawback
+itxn_submit
+itxn CreatedAssetID
+itob
+log
+retsub
+sub1: // executeAssetTransferTxn
+store 2
+itxn_begin
+int axfer
+itxn_field TypeEnum
+txna Assets 0
+itxn_field XferAsset
+txna Accounts 1
+itxn_field AssetReceiver
+load 2
+itxn_field AssetAmount
+itxn_submit
+txna Assets 0
+itob
+log
+retsub
+sub2: // executeAssetDestroyTxn
+itxn_begin
+int acfg
+itxn_field TypeEnum
+txna Assets 0
+itxn_field ConfigAsset
+itxn_submit
+txna Assets 0
+itob
+log
+retsub

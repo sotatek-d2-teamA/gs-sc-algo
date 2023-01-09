@@ -8,7 +8,7 @@ def approval_program():
 
 #########################################################################################
     @Subroutine(TealType.none)
-    def executeAssetCreationTxn(totalAmount: Expr, decimals: Expr) -> TxnExpr:
+    def executeAssetCreationTxn(totalAmount: Expr, decimals: Expr) -> Expr:
         return Seq([
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields({
@@ -30,7 +30,7 @@ def approval_program():
         ])
 
     @Subroutine(TealType.none)
-    def executeAssetTransferTxn(amount: Expr) -> TxnExpr:
+    def executeAssetTransferTxn(amount: Expr) -> Expr:
         return Seq([
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -46,7 +46,7 @@ def approval_program():
         ])
 
     @Subroutine(TealType.none)
-    def executeAssetDestroyTxn() -> TxnExpr:
+    def executeAssetDestroyTxn() -> Expr:
         return Seq([
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
@@ -58,7 +58,7 @@ def approval_program():
             InnerTxnBuilder.Submit(),
             Log(Itob(Txn.assets[0])),
         ])
-        
+
 #########################################################################################
 
     on_create = Seq(
@@ -144,8 +144,7 @@ def approval_program():
         Approve(),
     )
 
-    on_withdraw_item = Seq(
-        # only server can call
+    on_withdraw_item = Seq(        # only server can call
         Assert(Gtxn[Int(1)].sender() == App.globalGet(server_address)),
         Log(Txn.application_args[0]),  # withdraw
         executeAssetTransferTxn(Btoi(Txn.application_args[1])),
@@ -210,12 +209,12 @@ def clear_state_program():
     return Approve()
 
 
-with open("teal/nft/auction_approval.teal", "w") as f:
+with open("teal/main/auction_approval.teal", "w") as f:
     compiled = compileTeal(
         approval_program(), mode=Mode.Application, version=5)
     f.write(compiled)
 
-with open("teal/nft/auction_clear_state.teal", "w") as f:
+with open("teal/main/auction_clear_state.teal", "w") as f:
     compiled = compileTeal(clear_state_program(),
                            mode=Mode.Application, version=5)
     f.write(compiled)

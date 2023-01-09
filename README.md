@@ -38,5 +38,5 @@ Format code:
 Chạy để compile:
 
 ```
-python3 nftCompile.py
+python3 mainCompile.py
 ```
