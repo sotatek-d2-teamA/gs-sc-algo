@@ -1,4 +1,4 @@
-from contract.mainContract import approval_program, clear_state_program
+from contract.marketplaceContract import approval_program, clear_state_program
 from pyteal import compileTeal, Mode, Expr
 
 
@@ -15,6 +15,7 @@ def compile():
     print(APPROVAL_PROGRAM.replace('\n', '\\n'))
     print('\n')
     print(CLEAR_STATE_PROGRAM.replace('\n', '\\n'))
+
 
 
 compile()

@@ -1,0 +1,202 @@
+#pragma version 5
+txn ApplicationID
+int 0
+==
+bnz main_l14
+txn OnCompletion
+int NoOp
+==
+bnz main_l11
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l6
+txn OnCompletion
+int OptIn
+==
+txn OnCompletion
+int CloseOut
+==
+||
+txn OnCompletion
+int UpdateApplication
+==
+||
+bnz main_l5
+err
+main_l5:
+int 0
+return
+main_l6:
+txna ApplicationArgs 0
+byte "buy"
+==
+bnz main_l10
+txna ApplicationArgs 0
+byte "cancel"
+==
+bnz main_l9
+err
+main_l9:
+txn Sender
+byte "seller"
+app_global_get
+==
+txn Sender
+global CreatorAddress
+==
+||
+assert
+byte "nft_id"
+app_global_get
+callsub sub0
+byte "seller"
+app_global_get
+callsub sub1
+byte "on_cancel"
+log
+int 1
+return
+main_l10:
+global CurrentApplicationAddress
+byte "nft_id"
+app_global_get
+asset_holding_get AssetBalance
+store 0
+store 1
+load 0
+load 1
+int 0
+>
+&&
+load 1
+byte "nft_quantity"
+app_global_get
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns TypeEnum
+int pay
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Sender
+txn Sender
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Receiver
+global CurrentApplicationAddress
+==
+&&
+txn GroupIndex
+int 1
+-
+gtxns Amount
+byte "nft_price"
+app_global_get
+>=
+&&
+assert
+byte "nft_id"
+app_global_get
+callsub sub0
+byte "seller"
+app_global_get
+callsub sub1
+byte "on_buy"
+log
+int 1
+return
+main_l11:
+txna ApplicationArgs 0
+byte "sell"
+==
+bnz main_l13
+err
+main_l13:
+byte "nft_status"
+app_global_get
+byte "on_sell"
+!=
+assert
+itxn_begin
+int axfer
+itxn_field TypeEnum
+byte "nft_id"
+app_global_get
+itxn_field XferAsset
+global CurrentApplicationAddress
+itxn_field AssetReceiver
+itxn_submit
+byte "nft_status"
+byte "on_sell"
+app_global_put
+int 1
+return
+main_l14:
+byte "seller"
+txna ApplicationArgs 0
+app_global_put
+byte "nft_id"
+txna ApplicationArgs 1
+btoi
+app_global_put
+byte "nft_price"
+txna ApplicationArgs 2
+btoi
+app_global_put
+byte "nft_quantity"
+txna ApplicationArgs 3
+btoi
+app_global_put
+byte "nft_quantity"
+app_global_get
+int 0
+>
+assert
+byte "nft_status"
+byte "on_create"
+app_global_put
+int 1
+return
+sub0: // closeNFTTo
+store 2
+global CurrentApplicationAddress
+load 2
+asset_holding_get AssetBalance
+store 3
+store 4
+load 3
+bz sub0_l2
+itxn_begin
+int axfer
+itxn_field TypeEnum
+load 2
+itxn_field XferAsset
+txn Sender
+itxn_field AssetCloseTo
+itxn_submit
+sub0_l2:
+retsub
+sub1: // closeAccountTo
+store 5
+global CurrentApplicationAddress
+balance
+int 0
+!=
+bz sub1_l2
+itxn_begin
+int pay
+itxn_field TypeEnum
+load 5
+itxn_field CloseRemainderTo
+itxn_submit
+sub1_l2:
+retsub
