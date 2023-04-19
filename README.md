@@ -35,3 +35,12 @@ python3 mainCompile.py
 MARKETPLACE:
 python3 marketplaceCompile.py
 ```
+
+Test:
+```
+MAIN:
+TODO
+
+MARKETPLACE:
+python3 marketplace_test.py
+```

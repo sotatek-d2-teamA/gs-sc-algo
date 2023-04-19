@@ -49,10 +49,10 @@ global CreatorAddress
 assert
 byte "nft_id"
 app_global_get
-callsub sub0
+callsub closeNFTTo_0
 byte "seller"
 app_global_get
-callsub sub1
+callsub closeAccountTo_1
 byte "on_cancel"
 log
 int 1
@@ -62,14 +62,14 @@ global CurrentApplicationAddress
 byte "nft_id"
 app_global_get
 asset_holding_get AssetBalance
-store 0
 store 1
-load 0
+store 0
 load 1
+load 0
 int 0
 >
 &&
-load 1
+load 0
 byte "nft_quantity"
 app_global_get
 ==
@@ -106,10 +106,10 @@ app_global_get
 assert
 byte "nft_id"
 app_global_get
-callsub sub0
+callsub closeNFTTo_0
 byte "seller"
 app_global_get
-callsub sub1
+callsub closeAccountTo_1
 byte "on_buy"
 log
 int 1
@@ -166,15 +166,17 @@ byte "on_create"
 app_global_put
 int 1
 return
-sub0: // closeNFTTo
+
+// closeNFTTo
+closeNFTTo_0:
 store 2
 global CurrentApplicationAddress
 load 2
 asset_holding_get AssetBalance
-store 3
 store 4
-load 3
-bz sub0_l2
+store 3
+load 4
+bz closeNFTTo_0_l2
 itxn_begin
 int axfer
 itxn_field TypeEnum
@@ -183,20 +185,22 @@ itxn_field XferAsset
 txn Sender
 itxn_field AssetCloseTo
 itxn_submit
-sub0_l2:
+closeNFTTo_0_l2:
 retsub
-sub1: // closeAccountTo
+
+// closeAccountTo
+closeAccountTo_1:
 store 5
 global CurrentApplicationAddress
 balance
 int 0
 !=
-bz sub1_l2
+bz closeAccountTo_1_l2
 itxn_begin
 int pay
 itxn_field TypeEnum
 load 5
 itxn_field CloseRemainderTo
 itxn_submit
-sub1_l2:
+closeAccountTo_1_l2:
 retsub
